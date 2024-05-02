@@ -50,7 +50,7 @@ class ExceptionHandlerControllerTest {
     @Test
     void handleUserNotFoundException() {
         Integer userId = 18;
-        String message = String.format("Can`t find user with id = %s", userId);;
+        String message = String.format("Can`t find user with id = %s", userId);
 
         UserNotFoundException exception = new UserNotFoundException(message);
 

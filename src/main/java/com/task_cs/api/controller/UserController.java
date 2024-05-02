@@ -6,7 +6,6 @@ import com.task_cs.api.model.UserUpdateRequest;
 import com.task_cs.api.model.dto.UserRequestDto;
 import com.task_cs.api.model.dto.UserResponseDto;
 import com.task_cs.api.mapper.UserMapper;
-import com.task_cs.api.model.entity.UserEntity;
 import com.task_cs.api.service.UserService;
 import com.task_cs.api.service.ValidationService;
 import jakarta.validation.Valid;

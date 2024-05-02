@@ -1,6 +1,5 @@
 package com.task_cs.api.model.entity;
 
-import com.task_cs.api.model.dto.UserRequestDto;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Id;
