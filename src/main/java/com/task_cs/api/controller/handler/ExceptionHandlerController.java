@@ -4,6 +4,7 @@ import com.task_cs.api.exception.UserNotFoundException;
 import com.task_cs.api.model.dto.exception.ExceptionDTO;
 import com.task_cs.api.exception.UserValidationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -33,8 +34,10 @@ public class ExceptionHandlerController {
     @ResponseStatus(value = BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ExceptionDTO handleUserValidationFieldsException(MethodArgumentNotValidException ex) {
-        String message = Optional.ofNullable(ex.getBindingResult().getFieldError().getDefaultMessage())
-                .orElse("Invalid input data");
+        FieldError fieldError = ex.getBindingResult().getFieldError();
+
+        String message = fieldError != null ? fieldError.getDefaultMessage() : "Invalid input data";
+
         return ExceptionDTO.builder()
                         .errorCode(BAD_REQUEST.value())
                         .errorTitle(BAD_REQUEST.name())
