@@ -12,11 +12,15 @@ import com.task_cs.api.model.UserResponse;
 import com.task_cs.api.model.UserUpdateRequest;
 import com.task_cs.api.model.dto.UserRequestDto;
 import com.task_cs.api.model.dto.UserResponseDto;
+import com.task_cs.api.model.dto.exception.ExceptionDTO;
 import com.task_cs.api.presets.UserPresets;
 import com.task_cs.api.service.UserService;
 import com.task_cs.api.service.ValidationService;
 import com.task_cs.api.service.impl.UserServiceImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -25,10 +29,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -116,7 +122,8 @@ class UserControllerTest {
 
         String exceptionMessage = "Invalid date";
 
-        doThrow(new UserValidationException(exceptionMessage)).when(validationService).validateDate(request.getBirthday());
+        doThrow(new UserValidationException(exceptionMessage)).when(validationService).
+                validateDate(request.getBirthday());
 
         mockMvc.perform(post("/users")
                         .contentType("application/json")
@@ -138,7 +145,8 @@ class UserControllerTest {
         request.setBirthday(LocalDate.now().minusYears(invalidUserAge));
 
         doNothing().when(validationService).validateDate(request.getBirthday());
-        doThrow(new UserValidationException(exceptionMessage)).when(validationService).validateAge(request.getBirthday());
+        doThrow(new UserValidationException(exceptionMessage)).when(validationService).
+                validateAge(request.getBirthday());
 
         mockMvc.perform(post("/users")
                         .contentType("application/json")
@@ -149,6 +157,97 @@ class UserControllerTest {
                         Objects.requireNonNull(result.getResolvedException()).getMessage()));
 
         verify(validationService).validateAge(request.getBirthday());
+    }
+
+    @Test
+    void testCreateUserWhenInvalidUserEmailPatternAndReturns400() throws Exception {
+        String invalidEmail = "example";
+        String exceptionMessage = "Invalid email";
+
+        UserRequest request = UserPresets.userRequestPreset();
+        request.setEmail(invalidEmail);
+
+        MvcResult mvcResult = mockMvc.perform(post("/users")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class,
+                        result.getResolvedException()))
+                .andReturn();
+
+        String contentAsString = mvcResult.getResponse().getContentAsString();
+        ExceptionDTO result = objectMapper.readValue(contentAsString, ExceptionDTO.class);
+
+        assertEquals(result.getErrorMessage(), exceptionMessage);
+        assertEquals(result.getErrorTitle(), "BAD_REQUEST");
+        assertEquals(result.getErrorCode(), 400);
+    }
+
+    @Test
+    void testCreateUserWhenInvalidUserPhonePatternAndReturns400() throws Exception {
+        String invalidPhone = "56546546554";
+        String exceptionMessage = "Invalid phone_number. Should be (xxx)xxx-xxxx or xxx-xxx-xxxx";
+
+        UserRequest request = UserPresets.userRequestPreset();
+        request.setPhoneNumber(invalidPhone);
+
+        MvcResult mvcResult = mockMvc.perform(post("/users")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class,
+                        result.getResolvedException()))
+                .andReturn();
+
+        String contentAsString = mvcResult.getResponse().getContentAsString();
+        ExceptionDTO result = objectMapper.readValue(contentAsString, ExceptionDTO.class);
+
+        assertEquals(result.getErrorMessage(), exceptionMessage);
+        assertEquals(result.getErrorTitle(), "BAD_REQUEST");
+        assertEquals(result.getErrorCode(), 400);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideBlankUsersFields")
+    void testCreateUserWhenBlankRequiredUserFieldsAndReturns400(String email, String firstName, String lastName,
+                                                                LocalDate birthday, String exMessage) throws Exception {
+
+        UserRequest request = UserRequest.builder()
+                .email(email)
+                .firstName(firstName)
+                .lastName(lastName)
+                .birthday(birthday)
+                .address("Some Address")
+                .phoneNumber("(099)999-9999")
+                .build();
+
+        MvcResult mvcResult = mockMvc.perform(post("/users")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class,
+                        result.getResolvedException()))
+                .andReturn();
+
+        String contentAsString = mvcResult.getResponse().getContentAsString();
+        ExceptionDTO result = objectMapper.readValue(contentAsString, ExceptionDTO.class);
+
+        assertEquals(result.getErrorMessage(), exMessage);
+        assertEquals(result.getErrorTitle(), "BAD_REQUEST");
+        assertEquals(result.getErrorCode(), 400);
+    }
+
+    private static Stream<Arguments> provideBlankUsersFields() {
+        return Stream.of(
+                Arguments.of(null, "Nick", "Kant",
+                        LocalDate.now().minusYears(20), "Email is mandatory field"),
+                Arguments.of("example@example3.com", null, "Kant",
+                        LocalDate.now().minusYears(20), "First name is mandatory field"),
+                Arguments.of("example@example3.com", "Nick", null,
+                        LocalDate.now().minusYears(20), "Last name is mandatory field"),
+                Arguments.of("example@example3.com", "Nick", "Kant",
+                        null, "Birthday is mandatory field")
+        );
     }
 
     @Test
@@ -212,6 +311,56 @@ class UserControllerTest {
         verify(validationService).validateDate(request.getBirthday());
         verify(validationService).validateAge(request.getBirthday());
         verify(userService).updateUser(userId, requestDto);
+    }
+
+    @Test
+    void testUpdateUserWhenInvalidUserEmailPatternAndReturns400() throws Exception {
+        Integer userId = 10;
+        String invalidEmail = "example";
+        String exceptionMessage = "Invalid email";
+
+        UserRequest request = UserPresets.userRequestPreset();
+        request.setEmail(invalidEmail);
+
+        MvcResult mvcResult = mockMvc.perform(put("/users/{id}", userId)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class,
+                        result.getResolvedException()))
+                .andReturn();
+
+        String contentAsString = mvcResult.getResponse().getContentAsString();
+        ExceptionDTO result = objectMapper.readValue(contentAsString, ExceptionDTO.class);
+
+        assertEquals(result.getErrorMessage(), exceptionMessage);
+        assertEquals(result.getErrorTitle(), "BAD_REQUEST");
+        assertEquals(result.getErrorCode(), 400);
+    }
+
+    @Test
+    void testUpdateUserWhenInvalidUserPhonePatternAndReturns400() throws Exception {
+        Integer userId = 10;
+        String invalidPhone = "56546546554";
+        String exceptionMessage = "Invalid phone_number. Should be (xxx)xxx-xxxx or xxx-xxx-xxxx";
+
+        UserRequest request = UserPresets.userRequestPreset();
+        request.setPhoneNumber(invalidPhone);
+
+        MvcResult mvcResult = mockMvc.perform(put("/users/{id}", userId)
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(result -> assertInstanceOf(MethodArgumentNotValidException.class,
+                        result.getResolvedException()))
+                .andReturn();
+
+        String contentAsString = mvcResult.getResponse().getContentAsString();
+        ExceptionDTO result = objectMapper.readValue(contentAsString, ExceptionDTO.class);
+
+        assertEquals(result.getErrorMessage(), exceptionMessage);
+        assertEquals(result.getErrorTitle(), "BAD_REQUEST");
+        assertEquals(result.getErrorCode(), 400);
     }
 
     @Test

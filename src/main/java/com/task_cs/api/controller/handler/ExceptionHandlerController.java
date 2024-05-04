@@ -32,12 +32,12 @@ public class ExceptionHandlerController {
 
     @ResponseStatus(value = BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ExceptionDTO handleUserNotFoundException(MethodArgumentNotValidException ex) {
+    public ExceptionDTO handleUserValidationFieldsException(MethodArgumentNotValidException ex) {
         String message = Optional.ofNullable(ex.getBindingResult().getFieldError().getDefaultMessage())
                 .orElse("Invalid input data");
         return ExceptionDTO.builder()
-                        .errorCode(ex.getStatusCode().value())
-                        .errorTitle(ex.getBody().getTitle())
+                        .errorCode(BAD_REQUEST.value())
+                        .errorTitle(BAD_REQUEST.name())
                         .errorMessage(message)
                         .errorTimestamp(LocalDateTime.now())
                         .build();

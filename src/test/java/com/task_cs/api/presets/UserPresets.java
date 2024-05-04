@@ -12,12 +12,12 @@ import java.util.List;
 public class UserPresets {
     public static final Integer USER_ID = 1;
     public static final Integer USER_AGE = 18;
-    private static final String EMAIL = "example@gmail.com";
+    private static final String EMAIL = "example@example3.com";
     private static final String FIRST_NAME = "John";
     private static final String LAST_NAME = "Smith";
     private static final LocalDate BIRTHDAY = LocalDate.now().minusYears(USER_AGE);
     private static final String ADDRESS = "Wall-street 22";
-    private static final String PHONE = "564654651231";
+    private static final String PHONE = "(099)999-9999";
 
     public static UserRequestDto userRequestDtoPreset() {
         return UserRequestDto.builder()
