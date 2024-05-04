@@ -16,25 +16,29 @@ import java.time.LocalDate;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table
+@Table(name = "USERS")
 public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
     private Integer id;
 
+    @Column(name = "EMAIL")
     private String email;
 
-    @Column(name = "first_name")
+    @Column(name = "FIRST_NAME")
     private String firstName;
 
-    @Column(name = "last_name")
+    @Column(name = "LAST_NAME")
     private String lastName;
 
+    @Column(name = "BIRTHDAY")
     private LocalDate birthday;
 
+    @Column(name = "ADDRESS")
     private String address;
 
-    @Column(name = "phone_number")
+    @Column(name = "PHONE_NUMBER")
     private String phoneNumber;
 
 }

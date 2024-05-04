@@ -56,7 +56,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Integer id,
-                                                   @RequestBody UserUpdateRequest userRequest) {
+                                                   @RequestBody @Valid UserUpdateRequest userRequest) {
         if(userRequest.getBirthday() != null) {
             validationService.validateDate(userRequest.getBirthday());
             validationService.validateAge(userRequest.getBirthday());

@@ -4,11 +4,13 @@ import com.task_cs.api.exception.UserNotFoundException;
 import com.task_cs.api.model.dto.exception.ExceptionDTO;
 import com.task_cs.api.exception.UserValidationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -26,6 +28,19 @@ public class ExceptionHandlerController {
     @ExceptionHandler(UserNotFoundException.class)
     public ExceptionDTO handleUserNotFoundException(UserNotFoundException ex) {
         return buildUserExceptionDTO(ex, NOT_FOUND);
+    }
+
+    @ResponseStatus(value = BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ExceptionDTO handleUserNotFoundException(MethodArgumentNotValidException ex) {
+        String message = Optional.ofNullable(ex.getBindingResult().getFieldError().getDefaultMessage())
+                .orElse("Invalid input data");
+        return ExceptionDTO.builder()
+                        .errorCode(ex.getStatusCode().value())
+                        .errorTitle(ex.getBody().getTitle())
+                        .errorMessage(message)
+                        .errorTimestamp(LocalDateTime.now())
+                        .build();
     }
 
     private <T extends RuntimeException> ExceptionDTO buildUserExceptionDTO(T exception, HttpStatus status) {
